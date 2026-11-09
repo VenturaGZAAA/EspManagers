@@ -1,7 +1,7 @@
 #ifndef ENLATADORA_IOT_DASHBOARDSERVER_H
 #define ENLATADORA_IOT_DASHBOARDSERVER_H
 
-#if __has_include(<drivers/specific/SdCardManager.h>)
+#if __has_include(<SdCardManager.h>)
 #define SD_CARD_CONNECTED
 #endif
 
