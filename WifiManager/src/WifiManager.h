@@ -9,6 +9,7 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <functional>
+#include <atomic>
 
 class WifiManager {
     static inline Preferences prefs;

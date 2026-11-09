@@ -36,7 +36,7 @@ void EvenTheRGBLedHasManagers::setColor(const RGBColor color, const unsigned lon
 }
 
 void EvenTheRGBLedHasManagers::writeColor(const RGBColor &color) {
-    neopixelWrite(RGB_PIN, color.getR(), color.getG(), color.getB());
+    rgbLedWrite(RGB_PIN, color.getR(), color.getG(), color.getB());
 }
 
 [[noreturn]] void EvenTheRGBLedHasManagers::loop() {

@@ -23,7 +23,27 @@
 #define ENABLE_USE_ASYNC_WEBSOCKET_SERVER
 #endif
 
+
+
+
 class Monitor {
+    class MonitorPrint : public Print {
+    public:
+        size_t write(const uint8_t c) override {
+            const char buf[2] = {static_cast<char>(c), '\0'};
+            Monitor::write(buf);
+            return 1;
+        }
+        size_t write(const uint8_t *buffer, const size_t size) override {
+            if (buffer && size > 0) {
+                const std::string s(reinterpret_cast<const char *>(buffer), size);
+                Monitor::write(s);
+                return size;
+            }
+            return 0;
+        }
+    };
+
     static inline bool enabledAsyncWebSocketServer = false;
 
     static inline std::unique_ptr<SerialManager> serialInstance = nullptr;
@@ -50,6 +70,7 @@ class Monitor {
 
 public:
     Monitor() = delete;
+    static inline MonitorPrint print;
 
     static void write(const std::string &message);
     static void writeLine(const std::string &message);

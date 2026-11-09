@@ -37,8 +37,7 @@ public:
 
     static void enableWifiPostEndpoint(const String &path);
 
-    static void enableOTASupport(const char *username, const char *password, const char *path = "/firmware",
-                                 uint32_t delay = 2500);
+    static void enableOTASupport(const char *username, const char *password, const char *path = "/firmware",uint32_t delay = 2500);
 
     static void setup();
 

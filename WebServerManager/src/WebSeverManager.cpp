@@ -273,9 +273,9 @@ void WebSeverManager::handleFileRequest(AsyncWebServerRequest *request) {
     response->addHeader("Content-Length", String(file->fileSize()));
     if (contentEncoding != nullptr) {
         response->addHeader("Content-Encoding", contentEncoding);
-        // Optionally add cache control for compressed assets
+    // Optionally add cache control for compressed assets
 #ifndef DISABLE_DASHBOARD_CACHE
-        response->addHeader("Cache-Control", "public, max-age=31536000");
+    response->addHeader("Cache-Control", "public, max-age=31536000");
 #endif
     }
     // 7. Send the response
