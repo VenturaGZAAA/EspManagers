@@ -8,7 +8,7 @@
 #if __has_include("config/build_flags.h")
 #include "config/build_flags.h"
 #endif
-#include "drivers/universal/Monitor.h"
+#include "Monitor.h"
 #include <esp_task_wdt.h>
 
 WiFiServer MqttManager::tcp_server(1883);
