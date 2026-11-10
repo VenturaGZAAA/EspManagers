@@ -4,16 +4,8 @@
 #include <Arduino.h>
 #include "Monitor.h"
 
-void Monitor::useSerialManager(std::unique_ptr<SerialManager> serialManager) {
-    serialInstance = std::move(serialManager);
-    if (serialInstance) {
-        for (const auto &cb : callbacks) {
-            serialInstance->registerCallback(cb);
-        }
-        for (const auto &jcb : jsonCallbacks) {
-            serialInstance->registerJsonCallback(jcb);
-        }
-    }
+void Monitor::registerInstance(std::unique_ptr<IDebug> debugInstance) {
+    debugInstances.push_back(std::move(debugInstance));
 }
 
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
@@ -72,27 +64,27 @@ void Monitor::processWsQueue() {
     } while (hasMsg);
 }
 
-void Monitor::wsTaskEntry(void *pv) {
+void Monitor::wsTaskEntry(void *) {
     while (true) {
         ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(50));
         processWsQueue();
     }
 }
 
-void Monitor::onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type, void *arg,
-                        uint8_t *data, const size_t len) {
+void Monitor::onWsEvent(AsyncWebSocket *, const AsyncWebSocketClient *client, AwsEventType type, void *arg,
+                        const uint8_t *data, const size_t len) {
     if (!isInitialized.load())
         return;
 
     switch (type) {
         case WS_EVT_CONNECT:
-            if (serialInstance && client) {
-                serialInstance->writeLine("Ws client connected: " + client->remoteIP().toString());
+            if (client) {
+                writeLine("Ws client connected: " + client->remoteIP().toString());
             }
             break;
         case WS_EVT_DISCONNECT:
-            if (serialInstance && client) {
-                serialInstance->writeLine("Ws client disconnected: " + client->remoteIP().toString());
+            if (client) {
+                writeLine("Ws client disconnected: " + client->remoteIP().toString());
             }
             break;
         case WS_EVT_PING:
@@ -120,13 +112,13 @@ void Monitor::dispatchMessage(const std::string &rawMsg) {
     }
 
     if (JsonDocument jsonDocument; !deserializeJson(jsonDocument, data)) {
-        for (const auto &item : jsonCallbacks) {
+        for (const auto &item: jsonCallbacks) {
             if (item) {
                 item(jsonDocument);
             }
         }
     } else {
-        for (const auto &item : callbacks) {
+        for (const auto &item: callbacks) {
             if (item) {
                 item(data.c_str());
             }
@@ -135,9 +127,10 @@ void Monitor::dispatchMessage(const std::string &rawMsg) {
 }
 
 void Monitor::init() {
-    if (serialInstance) {
-        serialInstance->init();
+    for (const auto &instance: debugInstances) {
+        instance->init();
     }
+
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer) {
         startWsTask();
@@ -147,9 +140,10 @@ void Monitor::init() {
 }
 
 void Monitor::write(const std::string &message) {
-    if (serialInstance) {
-        serialInstance->write(message);
+    for (const auto &instance: debugInstances) {
+        instance->write(message);
     }
+
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
         ws->textAll(message.c_str());
@@ -158,8 +152,8 @@ void Monitor::write(const std::string &message) {
 }
 
 void Monitor::write(const String &message) {
-    if (serialInstance) {
-        serialInstance->write(message);
+    for (const auto &instance: debugInstances) {
+        instance->write(message);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
@@ -169,8 +163,8 @@ void Monitor::write(const String &message) {
 }
 
 void Monitor::write(const char *str) {
-    if (serialInstance) {
-        serialInstance->write(str);
+    for (const auto &instance: debugInstances) {
+        instance->write(str);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
@@ -180,8 +174,8 @@ void Monitor::write(const char *str) {
 }
 
 void Monitor::writeLine(const std::string &message) {
-    if (serialInstance) {
-        serialInstance->writeLine(message);
+    for (const auto &instance: debugInstances) {
+        instance->writeLine(message);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
@@ -191,8 +185,8 @@ void Monitor::writeLine(const std::string &message) {
 }
 
 void Monitor::writeLine(const String &message) {
-    if (serialInstance) {
-        serialInstance->writeLine(message);
+    for (const auto &instance: debugInstances) {
+        instance->writeLine(message);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
@@ -202,8 +196,8 @@ void Monitor::writeLine(const String &message) {
 }
 
 void Monitor::writeLine(const char *str) {
-    if (serialInstance) {
-        serialInstance->writeLine(str);
+    for (const auto &instance: debugInstances) {
+        instance->writeLine(str);
     }
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     if (enabledAsyncWebSocketServer && ws) {
@@ -214,14 +208,14 @@ void Monitor::writeLine(const char *str) {
 
 void Monitor::registerCallback(const std::function<void(const char *)> &callback) {
     callbacks.push_back(callback);
-    if (serialInstance) {
-        serialInstance->registerCallback(callback);
+    for (const auto &instance: debugInstances) {
+        instance->onCommandReceived += callback;
     }
 }
 
 void Monitor::registerJsonCallback(const std::function<void(JsonDocument)> &callback) {
     jsonCallbacks.push_back(callback);
-    if (serialInstance) {
-        serialInstance->registerJsonCallback(callback);
-    }
+   for (const auto &instance: debugInstances) {
+       instance->onJsonReceived += callback;
+   }
 }

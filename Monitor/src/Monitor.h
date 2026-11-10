@@ -5,6 +5,7 @@
 #ifndef ENLATADORA_IOT_MONITOR_H
 #define ENLATADORA_IOT_MONITOR_H
 
+#include <IDebug.h>
 #include <string>
 #include <functional>
 #include <atomic>
@@ -16,7 +17,6 @@
 #include <freertos/semphr.h>
 
 #include <ArduinoJson.h>
-#include "SerialManager.h"
 
 
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
@@ -49,7 +49,7 @@ class Monitor {
 
     static inline bool enabledAsyncWebSocketServer = false;
 
-    static inline std::unique_ptr<SerialManager> serialInstance = nullptr;
+    static inline std::vector<std::unique_ptr<IDebug>> debugInstances;
     static inline std::vector<std::function<void(const char *)>> callbacks;
     static inline std::vector<std::function<void(JsonDocument)>> jsonCallbacks;
 
@@ -60,7 +60,7 @@ class Monitor {
     static inline std::queue<std::string> wsMessageQueue;
 
     static void onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type,
-                          void *arg, uint8_t *data, size_t len);
+                          void *arg, const uint8_t *data, size_t len);
     static void wsTaskEntry(void *pv);
     static void startWsTask();
     static void enqueueWsMessage(const std::string &message);
@@ -87,7 +87,7 @@ public:
     static void registerCallback(const std::function<void(const char *)> &callback);
     static void registerJsonCallback(const std::function<void(JsonDocument)> &callback);
 
-    static void useSerialManager(std::unique_ptr<SerialManager> serialManager);
+    static void registerInstance(std::unique_ptr<IDebug> debugInstance);
 
 #ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
     static AsyncWebSocket &enableAsyncWebSocketHandler(const char *path = "/ws");
