@@ -16,21 +16,24 @@
 #include <freertos/semphr.h>
 
 class IDebug {
+    void loop();
+
+    virtual void run() = 0;
+
+protected:
     std::queue<std::string> serialQueue;
     SemaphoreHandle_t queueMutex = nullptr;
     bool running = false;
     uint32_t period = 25;
     TaskHandle_t mainTask = nullptr;
+
     static void taskEntry(void *pv);
-
-    void loop();
-
-    virtual void run() = 0;
 
 public:
     virtual ~IDebug() = default;
 
     virtual void init() = 0;
+
     virtual void stop() = 0;
 
     EspEvent<const char *> onCommandReceived;

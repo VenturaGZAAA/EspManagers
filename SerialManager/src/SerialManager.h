@@ -5,21 +5,15 @@
 #ifndef ENLATADORA_CONTROL_UARTMANAGER_H
 #define ENLATADORA_CONTROL_UARTMANAGER_H
 
-#include <queue>
+#include <IDebug.h>
 #include <string>
-#include <vector>
-#include <functional>
-#include <ArduinoJson.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
 #include <memory>
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <HWCDC.h>
 
 
-class SerialManager {
+class SerialManager :public IDebug {
     enum class SerialType {
         HARDWARE_SERIAL,
         HW_CDC
@@ -34,19 +28,14 @@ class SerialManager {
     uint32_t baudRate;
     uint32_t period;
     uint32_t bufferLength;
-    std::queue<std::string> serialQueue;
-    std::vector<std::function<void(const char *)> > serialCallbacks;
-    std::vector<std::function<void(JsonDocument)> > serialJsonCallbacks;
-    TaskHandle_t task = nullptr;
-    SemaphoreHandle_t queueMutex = nullptr;
+    // std::queue<std::string> serialQueue;
+    // std::vector<std::function<void(const char *)> > serialCallbacks;
+    // std::vector<std::function<void(JsonDocument)> > serialJsonCallbacks;
+
+    // SemaphoreHandle_t queueMutex = nullptr;
     String rxBuffer = "";
-    bool running = false;
 
-    static void taskEntry(void *pv);
-
-    void loop();
-
-    void run();
+    void run() override;
 
     //* THE CONSTRUCTORS ARE PRIVATE TO ENFORCE USAGE THROUGH UNIQUE POINTER CREATION
     explicit SerialManager(HardwareSerial &uartPort, int8_t rxPin = -1, int8_t txPin = -1, uint32_t baudRate = 115200,
@@ -57,7 +46,7 @@ class SerialManager {
     // THE CONSTRUCTORS ARE PRIVATE TO ENFORCE USAGE THROUGH UNIQUE POINTER CREATION *//
 public:
 
-    ~SerialManager();
+    ~SerialManager() override;
 
     static std::unique_ptr<SerialManager> reserve() { return {}; }
 
@@ -71,29 +60,17 @@ public:
         return std::unique_ptr<SerialManager>(new SerialManager(serial, baudRate, period, bufferLength));
     }
 
-    void init();
+    void init() override;
 
-    void init(uint32_t baudRate, uint32_t period = 25);
+    void init(uint32_t newBaudRate, uint32_t newPeriod = 25);
 
-    void stop();
+    void stop() override;
 
-    [[nodiscard]] bool isRunning() const { return running; }
+    void write(const std::string &message) override;
 
-    void write(const std::string &message);
-
-    void writeLine(const std::string &message);
-
-    void write(const String &message);
-
-    void writeLine(const String &message);
-
-    void write(const char *str);
-
-    void writeLine(const char *str);
-
-    void registerCallback(const std::function<void(const char *)> &callback);
-
-    void registerJsonCallback(const std::function<void(JsonDocument)> &callback);
+    // void registerCallback(const std::function<void(const char *)> &callback);
+    //
+    // void registerJsonCallback(const std::function<void(JsonDocument)> &callback);
 };
 
 

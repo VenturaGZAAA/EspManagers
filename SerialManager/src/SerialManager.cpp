@@ -18,7 +18,7 @@ SerialManager::SerialManager(HWCDC &serial, const uint32_t baudRate,
 }
 
 SerialManager::~SerialManager() {
-    stop();
+    SerialManager::stop();
     if (queueMutex) {
         vSemaphoreDelete(queueMutex);
         queueMutex = nullptr;
@@ -26,7 +26,7 @@ SerialManager::~SerialManager() {
 }
 
 void SerialManager::init() {
-    if (running) {
+    if (isRunning()) {
         return;
     }
     if (serialType == SerialType::HARDWARE_SERIAL && hwSerial) {
@@ -40,7 +40,7 @@ void SerialManager::init() {
         queueMutex = xSemaphoreCreateMutex();
     }
     running = true;
-    if (!task) {
+    if (!mainTask) {
         xTaskCreate(taskEntry, "SerialQueue", 8192, this, 1, &task);
     }
 }
@@ -52,19 +52,19 @@ void SerialManager::init(const uint32_t newBaudRate, const uint32_t newPeriod) {
 }
 
 void SerialManager::stop() {
-    if (!running && !task) {
+    if (!running && !mainTask) {
         return;
     }
     running = false;
 
-    if (task != nullptr) {
-        if (xTaskGetCurrentTaskHandle() != task) {
-            for (int i = 0; i < 20 && task != nullptr; ++i) {
+    if (mainTask != nullptr) {
+        if (xTaskGetCurrentTaskHandle() != mainTask) {
+            for (int i = 0; i < 20 && mainTask != nullptr; ++i) {
                 vTaskDelay(pdMS_TO_TICKS(10));
             }
-            if (task != nullptr) {
-                TaskHandle_t taskToDelete = task;
-                task = nullptr;
+            if (mainTask != nullptr) {
+                const TaskHandle_t taskToDelete = mainTask;
+                mainTask = nullptr;
                 vTaskDelete(taskToDelete);
             }
         }
@@ -88,22 +88,6 @@ void SerialManager::stop() {
     }
 }
 
-void SerialManager::taskEntry(void *pv) {
-    auto *manager = static_cast<SerialManager *>(pv);
-    manager->loop();
-    manager->task = nullptr;
-    vTaskDelete(nullptr);
-}
-
-void SerialManager::loop() {
-    const TickType_t xFrequency = pdMS_TO_TICKS(period); // 20 ms period (50 Hz)
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-
-    while (running) {
-        run();
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    }
-}
 
 void SerialManager::run() {
     if (queueMutex && xSemaphoreTake(queueMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
@@ -124,13 +108,9 @@ void SerialManager::run() {
                     const String data = rxBuffer;
                     rxBuffer = "";
                     if (JsonDocument jsonDocument; !deserializeJson(jsonDocument, data)) {
-                        for (const auto &item: serialJsonCallbacks) {
-                            item(jsonDocument);
-                        }
+                       onJsonReceived(jsonDocument);
                     } else {
-                        for (const auto &item: serialCallbacks) {
-                            item(data.c_str());
-                        }
+                       onCommandReceived(data.c_str());
                     }
                 }
             } else {
@@ -154,32 +134,3 @@ void SerialManager::write(const std::string &message) {
     }
 }
 
-void SerialManager::write(const String &message) {
-    write(std::string(message.c_str()));
-}
-
-void SerialManager::write(const char *str) {
-    if (str) {
-        write(std::string(str));
-    }
-}
-
-void SerialManager::writeLine(const std::string &message) {
-    write(message + "\r\n");
-}
-
-void SerialManager::writeLine(const String &message) {
-    write(message + "\r\n");
-}
-
-void SerialManager::writeLine(const char *str) {
-    write(str + String("\r\n"));
-}
-
-void SerialManager::registerCallback(const std::function<void(const char *)> &callback) {
-    serialCallbacks.push_back(callback);
-}
-
-void SerialManager::registerJsonCallback(const std::function<void(JsonDocument)> &callback) {
-    serialJsonCallbacks.push_back(callback);
-}
