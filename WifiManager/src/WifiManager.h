@@ -16,6 +16,8 @@ class WifiManager {
     static bool start_ap;
     static inline bool forced_ap = false;
     static inline bool forced_sta = false;
+    static inline String default_sta_ssid = "";
+    static inline String default_sta_password = "";
     static inline String forced_sta_ssid = "";
     static inline String forced_sta_password = "";
     static bool sta_connected;
@@ -56,6 +58,10 @@ public:
 
     static void setHostname(const char *_hostname) {
         hostname = _hostname;
+    }
+    static void setDefaultSTA(const String &ssid, const String &password = "") {
+        default_sta_ssid = ssid;
+        default_sta_password = password;
     }
 
     static bool setup(const String &ap_ssid = "", const String &ap_password = "");

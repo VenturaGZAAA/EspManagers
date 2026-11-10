@@ -4,12 +4,6 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#if __has_include("wifi_secrets.h")
-#include "wifi_secrets.h"
-#endif
-#if __has_include("config/build_flags.h")
-#include "config/build_flags.h"
-#endif
 #include <ESPmDNS.h>
 #include <ArduinoJson.h>
 #include "Monitor.h"
@@ -41,14 +35,8 @@ bool WifiManager::connectToNetwork() {
         ssid = forced_sta_ssid;
         pass = forced_sta_password;
     } else {
-#ifdef SECRET_SSID
-        ssid = prefs.getString("ssid", SECRET_SSID);
-        pass = prefs.getString("pass", SECRET_PASSWORD);
-
-#else
-        ssid = prefs.getString("ssid");
-        pass = prefs.getString("pass");
-#endif
+        ssid = prefs.getString("ssid", default_sta_ssid);
+        pass = prefs.getString("pass", default_sta_ssid);
     }
 
     if (ssid.length() == 0) {
