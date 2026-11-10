@@ -18,7 +18,10 @@
 #include <ArduinoJson.h>
 #include "SerialManager.h"
 
-#if __has_include(<ESPAsyncWebServer.h>)
+
+#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
+#include <ESPAsyncWebServer.h>
+#elif __has_include(<ESPAsyncWebServer.h>)
 #include <ESPAsyncWebServer.h>
 #define ENABLE_USE_ASYNC_WEBSOCKET_SERVER
 #endif
