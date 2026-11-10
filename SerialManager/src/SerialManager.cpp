@@ -41,7 +41,7 @@ void SerialManager::init() {
     }
     running = true;
     if (!mainTask) {
-        xTaskCreate(taskEntry, "SerialQueue", 8192, this, 1, &task);
+        xTaskCreate(taskEntry, "SerialQueue", 8192, this, 1, &mainTask);
     }
 }
 
