@@ -1,6 +1,9 @@
 {
   "name": "Monitor",
   "version": "0.1.0",
-  "dependencies": {}
+  "dependencies": {
+    "bblanchon/ArduinoJson": "^7.2.2",
+    "SerialManager": "*"
+  }
 }
 

@@ -1,6 +1,11 @@
 {
   "name": "WebServerManager",
   "version": "0.1.0",
-  "dependencies": {}
+  "dependencies": {
+    "bblanchon/ArduinoJson": "^7.2.2",
+    "esp32async/ESPAsyncWebServer": "^3.12.0",
+    "esp32async/AsyncTCP": "^3.5.0",
+    "WifiManager": "*"
+  }
 }
 
