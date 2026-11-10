@@ -12,7 +12,7 @@
 #include <ESPAsyncWebServer.h>
 #include <atomic>
 
-class WebSeverManager {
+class WebServerManager {
     static AsyncWebServer server;
 #ifdef SD_CARD_CONNECTED
     static const inline String webPath = "/web";
@@ -33,7 +33,7 @@ class WebSeverManager {
     static inline std::atomic<uint32_t> resetDelay = 2500;
 
 public:
-    WebSeverManager() = delete;
+    WebServerManager() = delete;
 
     static void registerJsonPostEndpoint(const String &path, const std::function<void(const JsonDocument &)> &callback,
                                          const char *onError = "undefined");

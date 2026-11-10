@@ -1,4 +1,4 @@
-#include "WebSeverManager.h"
+#include "WebServerManager.h"
 #include "Monitor.h"
 #ifdef SD_CARD_CONNECTED
 #include "SdCardManager.h"
@@ -11,12 +11,12 @@
 #include <utility>
 
 // Static definitions
-AsyncWebServer WebSeverManager::server(80);
+AsyncWebServer WebServerManager::server(80);
 
 // ------------------------------------------------------------------
 // Setup
 
-void WebSeverManager::setup() {
+void WebServerManager::setup() {
 #ifdef SD_CARD_CONNECTED
     if (SdCardManager::isMounted()) {
         // Configure routes
@@ -39,16 +39,16 @@ void WebSeverManager::setup() {
 
 #ifdef SD_CARD_CONNECTED
 
-void WebSeverManager::setOnRootRequested(std::function<void()> callback) {
+void WebServerManager::setOnRootRequested(std::function<void()> callback) {
     onRootRequested = std::move(callback);
 }
 #endif
 
-void WebSeverManager::setOnUpdateSuccessful(std::function<void()> callback) {
+void WebServerManager::setOnUpdateSuccessful(std::function<void()> callback) {
     onUpdateSuccessful = std::move(callback);
 }
 
-void WebSeverManager::registerJsonPostEndpoint(const String &path,
+void WebServerManager::registerJsonPostEndpoint(const String &path,
                                                const std::function<void(const JsonDocument &)> &callback,
                                                const char *onError) {
     server.on(path, HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -76,11 +76,11 @@ void WebSeverManager::registerJsonPostEndpoint(const String &path,
               });
 }
 
-void WebSeverManager::enableWifiPostEndpoint(const String &path) {
+void WebServerManager::enableWifiPostEndpoint(const String &path) {
     registerJsonPostEndpoint(path, WifiManager::wifiConfigJsonCallback, "Error parsing JSON for Wifi config on HTTP: ");
 }
 
-void WebSeverManager::enableOTASupport(const char *username, const char *password, const char *path,
+void WebServerManager::enableOTASupport(const char *username, const char *password, const char *path,
                                        const uint32_t delay) {
     const String user = username ? String(username) : String();
     const String pass = password ? String(password) : String();
@@ -206,7 +206,7 @@ void WebSeverManager::enableOTASupport(const char *username, const char *passwor
     }
 }
 
-void WebSeverManager::handleFileRequest(AsyncWebServerRequest *request) {
+void WebServerManager::handleFileRequest(AsyncWebServerRequest *request) {
     // 1. Determine the base file path (without compression suffix)
     String path = request->url();
 
@@ -284,13 +284,13 @@ void WebSeverManager::handleFileRequest(AsyncWebServerRequest *request) {
 }
 
 
-void WebSeverManager::handleFavicon(AsyncWebServerRequest *request) {
+void WebServerManager::handleFavicon(AsyncWebServerRequest *request) {
     request->send(204); // No content
 }
 
 // ------------------------------------------------------------------
 // Helpers
-String WebSeverManager::getContentType(const String &filename) {
+String WebServerManager::getContentType(const String &filename) {
     if (filename.endsWith(".html") || filename.endsWith(".htm")) return "text/html";
     if (filename.endsWith(".css")) return "text/css";
     if (filename.endsWith(".js")) return "application/javascript";
@@ -309,7 +309,7 @@ String WebSeverManager::getContentType(const String &filename) {
     return "application/octet-stream";
 }
 
-const char *WebSeverManager::getEncoding(const AsyncWebServerRequest *request) {
+const char *WebServerManager::getEncoding(const AsyncWebServerRequest *request) {
     auto *header = request->getHeader("Accept-Encoding");
     if (!header) return nullptr;
 
