@@ -63,6 +63,11 @@ public:
 
     static bool closeFile(SdFile *&file);
     static bool close(SdFile &file);
+
+    /* TODO:
+     *  Loading random files from an optional subfolder and an optional extension
+     *  Saving files
+     */
 };
 
 #endif //ENLATADORA_IOT_SDCARDMANAGER_H

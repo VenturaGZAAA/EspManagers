@@ -4,6 +4,9 @@
 #if __has_include(<SdCardManager.h>)
 #define SD_CARD_CONNECTED
 #endif
+#ifdef USE_SD_CARD_MANAGER
+#define SD_CARD_CONNECTED
+#endif
 
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
@@ -37,7 +40,8 @@ public:
 
     static void enableWifiPostEndpoint(const String &path);
 
-    static void enableOTASupport(const char *username, const char *password, const char *path = "/firmware",uint32_t delay = 2500);
+    static void enableOTASupport(const char *username, const char *password, const char *path = "/firmware",
+                                 uint32_t delay = 2500);
 
     static void setup();
 
