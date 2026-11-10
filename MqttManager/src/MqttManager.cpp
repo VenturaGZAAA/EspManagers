@@ -5,9 +5,6 @@
 #include <PicoMQTT.h>
 #include <PicoWebsocket.h>
 #include "MqttManager.h"
-#if __has_include("config/build_flags.h")
-#include "config/build_flags.h"
-#endif
 #include "Monitor.h"
 #include <esp_task_wdt.h>
 
