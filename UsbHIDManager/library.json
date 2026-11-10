@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "dependencies": {
     "bblanchon/ArduinoJson": "^7.2.2",
-    "tanakamasayuki/EspUsbHost": "2.10.1"
+    "tanakamasayuki/EspUsbHost": "2.10.1",
+    "EspEvent": "*"
   }
 }
 
