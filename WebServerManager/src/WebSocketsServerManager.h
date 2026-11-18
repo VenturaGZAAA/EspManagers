@@ -64,7 +64,9 @@ public:
         return std::unique_ptr<WebSocketsServerManager>(&instance);
     }
 
-    void operator delete(void *ptr) noexcept;
+    struct NoOpDeleter {
+        void operator()(WebSocketsServerManager *) const {}
+    };
 
     void init() override;
     void stop() override;
