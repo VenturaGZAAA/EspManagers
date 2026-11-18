@@ -19,12 +19,10 @@
 #include <mutex>
 #include <memory>
 #include <IDebug.h>
-
-class WebSocketsServerManager: public IDebug {
-    static WebSocketsServerManager instance;
+class WebSocketsServerManager : public IDebug {
+    // Remove: static WebSocketsServerManager instance;
 
     std::unique_ptr<AsyncWebSocket> ws = nullptr;
-
     std::string txBuffer;
 
     void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
@@ -42,7 +40,7 @@ class WebSocketsServerManager: public IDebug {
 
     void run() override;
 
-    WebSocketsServerManager() = default;
+    explicit WebSocketsServerManager(String wsPath = "/ws") : path(std::move(wsPath)) {}
 
 public:
     ~WebSocketsServerManager() override;
@@ -52,21 +50,13 @@ public:
     WebSocketsServerManager(WebSocketsServerManager &&) = delete;
     WebSocketsServerManager &operator=(WebSocketsServerManager &&) = delete;
 
-    static WebSocketsServerManager &getInstance() {
-        return instance;
-    }
-
     static std::unique_ptr<WebSocketsServerManager> reserve() {
-        return std::unique_ptr<WebSocketsServerManager>(&instance);
+        return {};
     }
 
-    static std::unique_ptr<WebSocketsServerManager> create() {
-        return std::unique_ptr<WebSocketsServerManager>(&instance);
+    static std::unique_ptr<WebSocketsServerManager> create(const String &wsPath = "/ws") {
+        return std::unique_ptr<WebSocketsServerManager>(new WebSocketsServerManager(wsPath));
     }
-
-    struct NoOpDeleter {
-        void operator()(WebSocketsServerManager *) const {}
-    };
 
     void init() override;
     void stop() override;
@@ -75,5 +65,4 @@ public:
 
     AsyncWebSocket &getWs(const String &wsPath = "/ws");
 };
-
 #endif //ESPMANAGERS_WEBSOCKETSSERVERMANAGER_H

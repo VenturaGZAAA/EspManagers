@@ -4,8 +4,6 @@
 
 #include "WebSocketsServerManager.h"
 
-WebSocketsServerManager WebSocketsServerManager::instance;
-
 WebSocketsServerManager::~WebSocketsServerManager() {
     WebSocketsServerManager::stop();
     if (wsQueueMutex) {
