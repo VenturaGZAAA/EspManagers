@@ -56,6 +56,16 @@ public:
         return instance;
     }
 
+    static std::unique_ptr<WebSocketsServerManager> reserve() {
+        return std::unique_ptr<WebSocketsServerManager>(&instance);
+    }
+
+    static std::unique_ptr<WebSocketsServerManager> create() {
+        return std::unique_ptr<WebSocketsServerManager>(&instance);
+    }
+
+    void operator delete(void *ptr) noexcept;
+
     void init() override;
     void stop() override;
 

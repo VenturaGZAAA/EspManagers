@@ -6,6 +6,13 @@
 
 WebSocketsServerManager WebSocketsServerManager::instance;
 
+void WebSocketsServerManager::operator delete(void *ptr) noexcept {
+    if (ptr == &instance) {
+        return;
+    }
+    ::operator delete(ptr);
+}
+
 WebSocketsServerManager::~WebSocketsServerManager() {
     WebSocketsServerManager::stop();
     if (wsQueueMutex) {
