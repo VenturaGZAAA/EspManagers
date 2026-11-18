@@ -11,23 +11,7 @@
 #include <atomic>
 #include <memory>
 #include <vector>
-#include <queue>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
-
 #include <ArduinoJson.h>
-
-
-#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-#include <ESPAsyncWebServer.h>
-#elif __has_include(<ESPAsyncWebServer.h>)
-#include <ESPAsyncWebServer.h>
-#define ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-#endif
-
-
-
 
 class Monitor {
     class MonitorPrint : public Print {
@@ -47,27 +31,9 @@ class Monitor {
         }
     };
 
-    static inline bool enabledAsyncWebSocketServer = false;
-
     static inline std::vector<std::unique_ptr<IDebug>> debugInstances;
     static inline std::vector<std::function<void(const char *)>> callbacks;
     static inline std::vector<std::function<void(JsonDocument)>> jsonCallbacks;
-
-#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-    static inline std::unique_ptr<AsyncWebSocket> ws = nullptr;
-    static inline TaskHandle_t wsTaskHandle = nullptr;
-    static inline SemaphoreHandle_t wsQueueMutex = nullptr;
-    static inline std::queue<std::string> wsMessageQueue;
-
-    static void onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type,
-                          void *arg, const uint8_t *data, size_t len);
-    static void wsTaskEntry(void *pv);
-    static void startWsTask();
-    static void enqueueWsMessage(const std::string &message);
-    static void processWsQueue();
-#endif
-
-    static void dispatchMessage(const std::string &rawMsg);
 
     static inline std::atomic<bool> isInitialized{false};
 
@@ -88,10 +54,6 @@ public:
     static void registerJsonCallback(const std::function<void(JsonDocument)> &callback);
 
     static void registerInstance(std::unique_ptr<IDebug> debugInstance);
-
-#ifdef ENABLE_USE_ASYNC_WEBSOCKET_SERVER
-    static AsyncWebSocket &enableAsyncWebSocketHandler(const char *path = "/ws");
-#endif
 
     static void init();
 };
