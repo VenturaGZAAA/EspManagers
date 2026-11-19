@@ -249,7 +249,7 @@ void WebServerManager::handleFileRequest(AsyncWebServerRequest *request) {
 
     auto *file = SdCardManager::openFile(filePath, O_READ);
     if (!file) {
-        request->send(404, "text/plain", "File not found");
+        request->send(404, "text/plain", "File not found: " + filePath);
         Monitor::writeLine("File not found: " + filePath);
         return;
     }
