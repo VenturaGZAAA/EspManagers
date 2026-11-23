@@ -10,6 +10,17 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+
+class SpiPins {
+    uint8_t sck = 18;
+    uint8_t miso = 19;
+    uint8_t mosi = 23;
+    uint8_t cs = 5;
+    friend class SdCardManager;
+public:
+    SpiPins(const uint8_t sck, const uint8_t miso, const uint8_t mosi, const uint8_t cs) : sck(sck), miso(miso), mosi(mosi), cs(cs) {}
+};
+
 class SdCardManager {
     static inline SdFat sd;
     static inline bool mounted = false;
@@ -39,15 +50,6 @@ public:
         explicit operator bool() const { return locked; }
     };
 
-    class SpiPins {
-        uint8_t sck = 18;
-        uint8_t miso = 19;
-        uint8_t mosi = 23;
-        uint8_t cs = 5;
-        friend class SdCardManager;
-        public:
-       SpiPins(const uint8_t sck, const uint8_t miso, const uint8_t mosi, const uint8_t cs) : sck(sck), miso(miso), mosi(mosi), cs(cs) {}
-    };
 
     SdCardManager() = delete;
 
