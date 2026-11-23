@@ -14,6 +14,7 @@
 class WifiManager {
     static inline Preferences prefs;
     static bool start_ap;
+    static bool disable_ap_fallback;
     static inline bool forced_ap = false;
     static inline bool forced_sta = false;
     static inline String default_sta_ssid = "";
@@ -24,7 +25,7 @@ class WifiManager {
     static const char *hostname;
     static IPAddress server_ip;
 
-    static bool connectToNetwork();
+    static bool connectToNetwork(const String &ssid = "", const String &password = "");
 
     static bool startAccessPoint(const String &ap_ssid, const String &ap_password);
 
@@ -45,8 +46,31 @@ public:
     static void wifiConfigJsonCallback(const JsonDocument &doc);
 
     static void forceAp() {
+        if (disable_ap_fallback) {
+            return;
+        }
         forced_ap = true;
         forced_sta = false;
+    }
+
+    static void setDisableApFallback(bool disable) {
+        disable_ap_fallback = disable;
+        if (disable_ap_fallback) {
+            start_ap = false;
+            forced_ap = false;
+        }
+    }
+
+    static void disableApFallback(bool disable = true) {
+        setDisableApFallback(disable);
+    }
+
+    static bool isApFallbackDisabled() {
+        return disable_ap_fallback;
+    }
+
+    static bool getDisableApFallback() {
+        return disable_ap_fallback;
     }
 
     static void forceSTA(const String &ssid, const String &password) {

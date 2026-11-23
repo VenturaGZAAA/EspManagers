@@ -4,7 +4,9 @@
   "dependencies": {
     "bblanchon/ArduinoJson": "^7.2.2",
     "mlesniew/PicoMQTT": "^1.3.0",
-    "mlesniew/PicoWebsocket": "^1.2.3"
+    "mlesniew/PicoWebsocket": "^1.2.3",
+    "IDebug": "*",
+    "EspEvent": "*"
   }
 }
 

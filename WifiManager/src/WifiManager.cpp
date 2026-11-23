@@ -10,6 +10,7 @@
 #include "WifiManager.h"
 
 bool WifiManager::start_ap = false;
+bool WifiManager::disable_ap_fallback = false;
 bool WifiManager::sta_connected = false;
 const char *WifiManager::hostname = "esp32-unset-host";
 IPAddress WifiManager::server_ip = IPAddress(192, 168, 4, 1);
@@ -19,7 +20,6 @@ void WifiManager::setupMdns() {
         Serial.println("MDNS responder not available");
         return;
     }
-    MDNS.addService("mqtt", "tcp", 1883);
 
     Serial.println("MDNS responder started: " + String(hostname) + ".local");
 }
@@ -28,24 +28,14 @@ void WifiManager::addService(const char *serviceName, const char *serviceType, s
     MDNS.addService(serviceName, serviceType, port);
 }
 
-bool WifiManager::connectToNetwork() {
-    String ssid;
-    String pass;
-    if (forced_sta) {
-        ssid = forced_sta_ssid;
-        pass = forced_sta_password;
-    } else {
-        ssid = prefs.getString("ssid", default_sta_ssid);
-        pass = prefs.getString("pass", default_sta_ssid);
-    }
-
+bool WifiManager::connectToNetwork(const String &ssid, const String &password) {
     if (ssid.length() == 0) {
         return false;
     }
 
     // --- Connect to Wi-Fi ---
     Serial.print("📶 Connecting to Wi-Fi");
-    WiFi.begin(ssid, pass);
+    WiFi.begin(ssid, password);
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 30) {
         delay(500);
@@ -58,12 +48,14 @@ bool WifiManager::connectToNetwork() {
         Serial.print("📡 IP address: ");
         Serial.println(server_ip);
         setupMdns();
+        sta_connected = true;
         return true;
     }
     Serial.println("\n❌ Failed to connect to Wi-Fi");
     Serial.println("SSID: " + ssid);
-    Serial.println("PASS: " + pass);
+    Serial.println("PASS: " + password);
     WiFi.disconnect();
+    sta_connected = false;
     return false;
 }
 
@@ -92,29 +84,74 @@ bool WifiManager::setup(const String &ap_ssid, const String &ap_password) {
     sta_connected = false;
 
     if (forced_ap) {
+        if (disable_ap_fallback) {
+            start_ap = false;
+            return false;
+        }
         start_ap = true;
         return startAccessPoint(ap_ssid, ap_password);
     }
 
     if (forced_sta) {
         start_ap = false;
-        sta_connected = connectToNetwork();
-        if (sta_connected) {
+        // 1. Try forced STA credentials
+        if (forced_sta_ssid.length() > 0 && connectToNetwork(forced_sta_ssid, forced_sta_password)) {
             return true;
         }
+
+        // 2. Fall back to NVS stored credentials
+        prefs.begin("wifi", false);
+        String nvs_ssid = prefs.getString("ssid", "");
+        String nvs_pass = prefs.getString("pass", "");
+        prefs.end();
+
+        if (nvs_ssid.length() > 0 && connectToNetwork(nvs_ssid, nvs_pass)) {
+            return true;
+        }
+
+        // 3. Fall back to default credentials
+        if (default_sta_ssid.length() > 0 && connectToNetwork(default_sta_ssid, default_sta_password)) {
+            return true;
+        }
+
+        // 4. Finally fall back to AP mode
+        if (disable_ap_fallback) {
+            return false;
+        }
+        start_ap = true;
         return startAccessPoint(ap_ssid, ap_password);
     }
 
     prefs.begin("wifi", false);
     start_ap = prefs.getBool("start_ap", false);
-    if (!start_ap) {
-        sta_connected = connectToNetwork();
-    }
+    String nvs_ssid = prefs.getString("ssid", "");
+    String nvs_pass = prefs.getString("pass", "");
     prefs.end();
 
-    if (sta_connected) {
+    if (disable_ap_fallback) {
+        start_ap = false;
+    }
+
+    if (start_ap) {
+        return startAccessPoint(ap_ssid, ap_password);
+    }
+
+    // When not on forced STA and start_ap is false:
+    // 1. Attempt stored credentials from NVS if available
+    if (nvs_ssid.length() > 0 && connectToNetwork(nvs_ssid, nvs_pass)) {
         return true;
     }
+
+    // 2. Then default credentials if available
+    if (default_sta_ssid.length() > 0 && connectToNetwork(default_sta_ssid, default_sta_password)) {
+        return true;
+    }
+
+    // 3. Finally AP mode
+    if (disable_ap_fallback) {
+        return false;
+    }
+    start_ap = true;
     return startAccessPoint(ap_ssid, ap_password);
 }
 
@@ -140,6 +177,7 @@ String WifiManager::getSerializedState() {
     JsonDocument jsonDoc;
     jsonDoc["start_ap"] = start_ap;
     jsonDoc["sta_connected"] = sta_connected;
+    jsonDoc["disable_ap_fallback"] = disable_ap_fallback;
     String state;
     serializeJson(jsonDoc, state);
     return state;
@@ -154,6 +192,9 @@ void WifiManager::wifiConfigJsonCallback(const JsonDocument &doc) {
     prefs.begin("wifi", false);
     if (doc["start_ap"].is<bool>()) {
         start_ap = doc["start_ap"];
+        if (disable_ap_fallback) {
+            start_ap = false;
+        }
         prefs.putBool("start_ap", start_ap);
         const auto mode = start_ap ? "AP" : "STA";
         Monitor::writeLine("WiFi starter mode set to: " + String(mode));
