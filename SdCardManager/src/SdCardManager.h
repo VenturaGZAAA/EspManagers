@@ -39,6 +39,16 @@ public:
         explicit operator bool() const { return locked; }
     };
 
+    class SpiPins {
+        uint8_t sck = 18;
+        uint8_t miso = 19;
+        uint8_t mosi = 23;
+        uint8_t cs = 5;
+        friend class SdCardManager;
+        public:
+       SpiPins(const uint8_t sck, const uint8_t miso, const uint8_t mosi, const uint8_t cs) : sck(sck), miso(miso), mosi(mosi), cs(cs) {}
+    };
+
     SdCardManager() = delete;
 
     static bool lock(TickType_t timeout = portMAX_DELAY);
@@ -50,8 +60,9 @@ public:
 
     static String resolvePath(const String &path);
 
-    static void init(const String &_rootPath = "/");
-
+    static void spiInit(const SpiPins &pins);
+    static void init(const SdSpiConfig &cfg,const String &_rootPath = "/");
+    static void init(const SpiPins &pins,const SdSpiConfig &cfg,const String &_rootPath = "/");
     static bool exists(const String &path);
     static bool exists(const char *path);
 

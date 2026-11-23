@@ -6,11 +6,6 @@
 #include "Monitor.h"
 #include <SPI.h>
 
-#define SD_CS   11
-#define SD_MOSI 12
-#define SD_SCK  13
-#define SD_MISO 14
-
 void SdCardManager::ensureMutex() {
     if (!sdMutex) {
         sdMutex = xSemaphoreCreateRecursiveMutex();
@@ -46,14 +41,15 @@ const String &SdCardManager::getRootPath() {
 }
 
 
-void SdCardManager::init(const String &_rootPath) {
+void SdCardManager::spiInit(const SpiPins &pins) {
+    SPI.begin(pins.sck, pins.miso, pins.mosi, pins.cs);
+}
+
+void SdCardManager::init(const SdSpiConfig &cfg,const String &_rootPath) {
     LockGuard lock(pdMS_TO_TICKS(5000));
     rootPath = _rootPath;
 
-    Monitor::writeLine("📀 Initializing SD card...");
-    SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
-
-    if (const SdSpiConfig cfg(SD_CS, SHARED_SPI, SD_SCK_MHZ(4), &SPI); !sd.begin(cfg)) {
+    if (!sd.begin(cfg)) {
         Monitor::writeLine(" ❌ Card Mount Failed!");
         SPI.end();
         mounted = false;
@@ -61,6 +57,11 @@ void SdCardManager::init(const String &_rootPath) {
         mounted = true;
         Monitor::writeLine("✅ SD card mounted");
     }
+}
+
+void SdCardManager::init(const SpiPins &pins, const SdSpiConfig &cfg, const String &_rootPath) {
+    spiInit(pins);
+    init(cfg, _rootPath);
 }
 
 String SdCardManager::resolvePath(const String &path) {
